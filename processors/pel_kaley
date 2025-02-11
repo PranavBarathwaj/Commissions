@@ -1,0 +1,5 @@
+# processors/summit_alice.py
+def process(df):
+    """Process for Summit - Alice combination"""
+    # Add specific Summit-Alice processing
+    return df
