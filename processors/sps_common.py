@@ -176,6 +176,14 @@ def process(sps):
             else:  # >= 19
                 return '25.00%'
                 
+        elif category == 'IQ':
+            if 65.5 <= price <= 69:
+                return '10.00%'
+            elif 69.25 <= price <= 72:
+                return '15.00%'
+            else:   # >= 73
+                return '18.00%' 
+
         else:  # Accessories or any other category
             return '0.00%'
 
