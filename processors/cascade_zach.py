@@ -1,12 +1,12 @@
-# processors/cascade_john.py
+# processors/cascade_kyle.py
 from .cascade_common import process as cascade_process
 import sys
 import streamlit as st
 
 def process(df):
-
-    states = ['MN']
-
+    
+    states = ['IA', 'NE']
+    
     # Filter the dataset to include only West Coast states
     df = df[df['Shipping State'].isin(states)]
     

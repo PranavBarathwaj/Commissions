@@ -1,22 +1,22 @@
-# processors/pel_kyle.py
-from .pel_common import process as pel_process
+# processors/sps_jon.py
+from .sps_common import process as sps_process
 import sys
 import streamlit as st
 
 def process(df):
     """Shopify processing for John with additional customization"""
-    # Define West Coast states
-    states = ['MN']
+    # First apply common Shopify processing
     
-    # Filter the dataset to include only West Coast states
-    df = df[df['State:'].isin(states)]
+    states = ['CA']
+
+    # Filter the dataset to include only New England states
+    df = df[df['STATE'].isin(states)]
     
     # Check if the filtered DataFrame is empty
     if df.empty:
         st.warning(f"No entries found for states: {', '.join(states)}.")
         sys.exit()  # This will terminate the program
-    
-    # If we have data, continue with processing
-    df = pel_process(df)
+
+    df = sps_process(df)
     
     return df

@@ -1,3 +1,3 @@
 # config.py
 COMPANIES = ['sps', 'cascade', 'shopify', 'pel']
-REPRESENTATIVES = ['John', 'Kyle Smith', 'Alice', 'Mike', 'Bob', 'Sarah', 'James', 'Kate', 'Paul', 'Nina']
+REPRESENTATIVES = ['Jon', 'Kyle', 'Zach', 'Beth', 'Adam', 'Brian', 'Butch', 'Courtney', 'Jim', 'John']

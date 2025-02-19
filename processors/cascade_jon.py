@@ -5,7 +5,8 @@ import streamlit as st
 
 def process(df):
 
-    states = ['MN']
+    # Define New England states
+    states = ['CT', 'ME', 'MA', 'NH', 'RI', 'VT']
 
     # Filter the dataset to include only West Coast states
     df = df[df['Shipping State'].isin(states)]

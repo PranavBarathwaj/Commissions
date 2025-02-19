@@ -1,20 +1,22 @@
-# processors/cascade_john.py
-from .cascade_common import process as cascade_process
+# processors/pel_kyle.py
+from .pel_common import process as pel_process
 import sys
 import streamlit as st
 
 def process(df):
-
-    states = ['MN']
-
+    """Shopify processing for John with additional customization"""
+    # Define West Coast states
+    states = ['WA', 'OR']
+    
     # Filter the dataset to include only West Coast states
-    df = df[df['Shipping State'].isin(states)]
+    df = df[df['State:'].isin(states)]
     
     # Check if the filtered DataFrame is empty
     if df.empty:
         st.warning(f"No entries found for states: {', '.join(states)}.")
         sys.exit()  # This will terminate the program
-
-    df = cascade_process(df)
+    
+    # If we have data, continue with processing
+    df = pel_process(df)
     
     return df

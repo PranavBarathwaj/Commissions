@@ -22,13 +22,17 @@ def process(cascade):
     cascade['Order Date'] = pd.to_datetime(cascade['Order Date'], errors='coerce')
     cascade['Order Date'] = cascade['Order Date'].dt.strftime('%#m/%#d/%y')
 
-        # Create a function to combine product names with their quantities
     def combine_products_with_qty(group):
-        return ', '.join(f"{prod}x{int(qty)}" if qty > 1 else prod
-                        for prod, qty in zip(group['Products Ordered'], group['QTY']))
+            products = []
+            for prod, qty in zip(group['Products Ordered'], group['QTY']):
+                if pd.isna(qty) or qty <= 1:
+                    products.append(str(prod))
+                else:
+                    products.append(f"{prod}x{int(qty)}")
+            return ', '.join(products)
 
     # Group by order number and aggregate the data
-    consolidated = cascade.groupby('Order#').agg({
+    consolidated = cascade.groupby('Order#', as_index=False).agg({
         'Account': 'first',
         'Order Date': 'first',
         'Products Ordered': lambda x: combine_products_with_qty(pd.DataFrame({
@@ -37,21 +41,26 @@ def process(cascade):
         })),
         'QTY': 'sum',
         'Total': 'first'
-    }).reset_index()
+        })
 
-    # Convert Total column to numeric, removing any currency symbols if present
-    consolidated['Total'] = pd.to_numeric(consolidated['Total'].replace('[\$,]', '', regex=True))
+    # Clean and convert Total column
+    def clean_currency(x):
+        if isinstance(x, str):
+            # Remove spaces, commas, and dollar signs
+            x = x.strip().replace(',', '').replace('$', '')
+            # Handle parentheses (negative values)
+            if '(' in x and ')' in x:
+                x = '-' + x.replace('(', '').replace(')', '')
+        return x
 
+    # Apply cleaning function and convert to numeric
+    consolidated['Total'] = consolidated['Total'].apply(clean_currency)
+    consolidated['Total'] = pd.to_numeric(consolidated['Total'], errors='coerce')
     consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
 
     # Add Price Per Unit column
     consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
-
-    # Round Price Per Unit to 2 decimal places
     consolidated['Price Per Unit'] = consolidated['Price Per Unit'].round(2)
-
-    # Sort by Order Date in descending order
-    consolidated = consolidated.sort_values('Order Date', ascending=False)
 
         # First, let's create lists of products for each category
     afo_products = ['ASLT', 'ASRT', 'AMLT', 'AMRT', 'ALLT', 'ALRT', 'AXLLT', 'AXLRT', 'SXSLT', 'SXSRT',
