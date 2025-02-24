@@ -3,6 +3,10 @@ import pandas as pd
 # processors/cascade_common.py
 def process(cascade):
     cascade.columns = cascade.columns.str.strip()
+    numeric_columns = ['Quantity', 'Total Price', 'Cogs_Amount']
+    cascade[numeric_columns] = cascade[numeric_columns].replace({r'[\(\)]': ''}, regex=True).astype(float)
+
+    # Convert Quantity specifically to Int64
     cascade['Quantity'] = pd.to_numeric(cascade['Quantity'], errors='coerce').astype('Int64')
     cascade = cascade[cascade['Direct Shipment'] == 'N']
     # Select only the specified columns
@@ -32,6 +36,7 @@ def process(cascade):
             return ', '.join(products)
 
     # Group by order number and aggregate the data
+    # The key change is here - sum the Total instead of taking the first value
     consolidated = cascade.groupby('Order#', as_index=False).agg({
         'Account': 'first',
         'Order Date': 'first',
@@ -40,7 +45,7 @@ def process(cascade):
             'QTY': cascade.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'first'
+        'Total': 'sum'  # Changed from 'first' to 'sum' to correctly sum totals for multiple products
         })
 
     # Clean and convert Total column
@@ -56,7 +61,8 @@ def process(cascade):
     # Apply cleaning function and convert to numeric
     consolidated['Total'] = consolidated['Total'].apply(clean_currency)
     consolidated['Total'] = pd.to_numeric(consolidated['Total'], errors='coerce')
-    consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
+    
+    #consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
 
     # Add Price Per Unit column
     consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']

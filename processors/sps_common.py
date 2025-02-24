@@ -33,7 +33,7 @@ def process(sps):
             'QTY': sps.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'first'
+        'Total': 'sum'
     }).reset_index()
 
     # Rename Subtotal to Total if needed
@@ -60,8 +60,8 @@ def process(sps):
                 'AXLRTMAG', 'SXSLTMAG', 'SXSRTMAG', 'SSLTMAG', 'SSRTMAG', 'SMLTMAG',
                 'SMRTMAG', 'SLLTMAG', 'SLRTMAG', 'SXLLTMAG', 'SXLRTMAG', 'PASLTMAG',
                 'PASRTMAG', 'PAMLTMAG', 'PAMRTMAG', 'PALLTMAG', 'PALRTMAG', 'PAXLLTMAG',
-                'PAXLRTMAG', 'UFOLTMAG', 'UFORTMAG', 'MXSLTMAG', 'MXSRTMAG', 'MSLTMAG',
-                'MSRTMAG', 'MMLTMAG', 'MMRTMAG', 'MLLTMAG', 'MLRTMAG', 'MXLLTMAG', 'MXLRTMAG',
+                'PAXLRTMAG', 'UFOLTMAG', 'UFORTMAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG',
+                'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG',
                 'FAXSRTMAG', 'FAXSLTMAG', 'FASLTMAG', 'FASRTMAG', 'FAMLTMAG', 'FAMRTMAG',
                 'FALLTMAG', 'FALRTMAG', 'FAXLLTMAG', 'FAXLRTMAG']
 
