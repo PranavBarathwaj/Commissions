@@ -104,7 +104,6 @@ def process(pel):
     pel['Category'] = pel['Products Ordered'].apply(determine_category)
 
     def determine_bonus_percentage(row):
-        try:
             price = float(row['Price Per Unit'])
             category = row['Category']
 
@@ -119,10 +118,60 @@ def process(pel):
                     return '22.50%'
                 else:  # >= 349
                     return '25.00%'
-            # ... (rest of your bonus percentage logic)
-            return '0.00%'
-        except (ValueError, TypeError):
-            return '0.00%'
+            elif category == 'FP':
+                if price < 19:
+                    return '10.00%'
+                elif 19 <= price <= 22:
+                    return '15.00%'
+                elif 23 <= price <= 25:
+                    return '20.00%'
+                elif 26 <= price <= 29:
+                    return '22.50%'
+                else:  # >= 30
+                    return '25.00%'
+
+            elif category == 'Ankle Braces':
+                if price <= 14:
+                    return '10.00%'
+                elif 15 <= price <= 16:
+                    return '12.50%'
+                elif 17 <= price <= 18:
+                    return '15.00%'
+                else:  # >= 19
+                    return '25.00%'
+
+            elif category == 'T-Strap':
+                if price < 15:
+                    return '10.00%'
+                elif 15 <= price <= 19:
+                    return '15.00%'
+                elif 20 <= price <= 23:
+                    return '20.00%'
+                elif 24 <= price <= 28:
+                    return '22.50%'
+                else:  # >= 29
+                    return '25.00%'
+
+            elif category in ['Socks', 'Calf Sleeves']:
+                if price <= 14:
+                    return '10.00%'
+                elif 15 <= price <= 16:
+                    return '20.00%'
+                elif 17 <= price <= 18:
+                    return '22.50%'
+                else:  # >= 19
+                    return '25.00%'
+            
+            elif category == 'IQ':
+                if 65.5 <= price <= 69:
+                    return '10.00%'
+                elif 69.25 <= price <= 72:
+                    return '15.00%'
+                else:   # >= 73
+                    return '18.00%'   
+
+            else:  # Accessories or any other category
+                return '0.00%'
 
     # Add Bonus % column
     pel['Bonus %'] = pel.apply(determine_bonus_percentage, axis=1)
