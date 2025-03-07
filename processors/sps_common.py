@@ -63,7 +63,7 @@ def process(sps):
                 'PAXLRTMAG', 'UFOLTMAG', 'UFORTMAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG',
                 'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG',
                 'FAXSRTMAG', 'FAXSLTMAG', 'FASLTMAG', 'FASRTMAG', 'FAMLTMAG', 'FAMRTMAG',
-                'FALLTMAG', 'FALRTMAG', 'FAXLLTMAG', 'FAXLRTMAG']
+                'FALLTMAG', 'FALRTMAG', 'FAXLLTMAG', 'FAXLRTMAG', 'SSXL']
 
     iq_products = ['IQ-1001', 'IQ-1002', 'IQ-1003', 'IQ-1004']
 

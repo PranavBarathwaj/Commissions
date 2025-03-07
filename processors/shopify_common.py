@@ -13,16 +13,33 @@ def process(shopify):
         'Lineitem sku': 'Products Ordered',
         'Lineitem quantity': 'QTY',
         'Subtotal': 'Total'
-        # 'Subtotal' stays the same
     })
 
     # Convert to datetime format
     shopify['Order Date'] = pd.to_datetime(shopify['Order Date'], errors='coerce')
     shopify['Order Date'] = shopify['Order Date'].dt.strftime('%#m/%#d/%y')
+    
+    # Handle nulls in Products Ordered - convert to empty string instead of null
+    shopify['Products Ordered'] = shopify['Products Ordered'].fillna('')
 
     def combine_products_with_qty(group):
-        return ', '.join(f"{prod}x{int(qty)}" if qty > 1 else prod 
-                    for prod, qty in zip(group['Products Ordered'], group['QTY']))
+        products_list = []
+        for prod, qty in zip(group['Products Ordered'], group['QTY']):
+            # Skip empty product names
+            if not prod:
+                continue
+                
+            # Convert prod to string explicitly in case it's a float or other non-string type
+            prod_str = str(prod)
+            
+            # Format with quantity if qty > 1
+            if qty > 1:
+                products_list.append(f"{prod_str}x{int(qty)}")
+            else:
+                products_list.append(prod_str)
+                
+        # Join all products with a comma
+        return ", ".join(products_list) if products_list else ""
 
     # Group by order number and aggregate the data
     consolidated = shopify.groupby('Order#').agg({
@@ -36,9 +53,6 @@ def process(shopify):
         'Total': 'first'
     }).reset_index()
 
-    # Rename Subtotal to Total if needed
-    consolidated = consolidated.rename(columns={'Subtotal': 'Total'})
-
     # Add Price Per Unit column
     consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
 
@@ -47,7 +61,8 @@ def process(shopify):
 
     # Sort by Order Date in descending order
     consolidated = consolidated.sort_values('Order Date', ascending=False)
-        # First, let's create lists of products for each category
+    
+    # First, let's create lists of products for each category
     afo_products = ['ASLT', 'ASRT', 'AMLT', 'AMRT', 'ALLT', 'ALRT', 'AXLLT', 'AXLRT', 'SXSLT', 'SXSRT', 
                     'SSLT', 'SSRT', 'SMLT', 'SMRT', 'SLLT', 'SLRT', 'SXLLT', 'SXLRT', 'PASLT', 'PASRT', 
                     'PAMLT', 'PAMRT', 'PALLT', 'PALRT', 'PAXLLT', 'PAXLRT', 'MXSLT', 'MXSRT', 'MSLT', 
@@ -60,7 +75,7 @@ def process(shopify):
                     'PAXLRT-MAG', 'UFOLT-MAG', 'UFORT-MAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG', 
                     'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG', 
                     'FAXSRT-MAG', 'FAXSLT-MAG', 'FASLT-MAG', 'FASRT-MAG', 'FAMLT-MAG', 'FAMRT-MAG', 
-                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG']
+                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG', 'SSXL']
 
     iq_products = ['IQ-1001', 'IQ-1002', 'IQ-1003', 'IQ-1004']
 
@@ -86,6 +101,10 @@ def process(shopify):
     calf_sleeves_products = ['XFCSS', 'XFCSM', 'XFCSL', 'XFCSXL', 'XFCSXXL', 'XFCSXXXL']
 
     def determine_category(products_str):
+        # Return 'Accessories' for empty strings
+        if not products_str:
+            return 'Accessories'
+            
         # Remove quantity indicators and split into individual products
         products = [p.split('x')[0].strip() for p in products_str.split(',')]
         
@@ -178,9 +197,8 @@ def process(shopify):
                 return '10.00%'
             elif 69.25 <= price <= 72:
                 return '15.00%'
-            else:   # >= 73
+            else:  # >= 73
                 return '18.00%'
-
         else:  # Accessories or any other category
             return '0.00%'
 
