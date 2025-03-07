@@ -5,7 +5,7 @@ def process(df):
     """Shopify processing for John with additional customization"""
     # First apply common Shopify processing
     # If you want to only remove single quotes at the beginning of the string, use:
-    
+    df = df[df['Email'] != 'pranavbp1810@gmail.com']
     df['Shipping Zip'] = df['Shipping Zip'].str.replace("^'", "", regex=True)
     zip = [
         # Allegan County, Michigan
