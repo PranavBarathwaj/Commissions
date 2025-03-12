@@ -83,7 +83,7 @@ def process(df):
     ]
 
     # Filter the dataset to include only West Coast states
-    df = df[df['Billing Zip'].isin(zip)]
+    df = df[df['Shipping Zip'].isin(zip)]
     df = shopify_process(df)
     
     return df
