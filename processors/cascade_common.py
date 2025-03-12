@@ -2,13 +2,18 @@ import pandas as pd
 
 # processors/cascade_common.py
 def process(cascade):
+
+    cascade = cascade.copy()
     cascade.columns = cascade.columns.str.strip()
     numeric_columns = ['Quantity', 'Total Price', 'Cogs_Amount']
     cascade[numeric_columns] = cascade[numeric_columns].replace({r'[\$\(\),]': ''}, regex=True)
 
     # Convert Quantity specifically to Int64
     cascade['Quantity'] = pd.to_numeric(cascade['Quantity'], errors='coerce').astype('Int64')
-    cascade = cascade[cascade['Direct Shipment'] == 'N']
+    
+    # FIX 1: Handle NA values in Direct Shipment column before boolean comparison
+    cascade = cascade[cascade['Direct Shipment'].fillna('') == 'N']
+    
     # Select only the specified columns
     columns_to_keep = ['Shipping State', 'Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
     cascade = cascade[columns_to_keep]
@@ -30,6 +35,7 @@ def process(cascade):
     def combine_products_with_qty(group):
             products = []
             for prod, qty in zip(group['Products Ordered'], group['QTY']):
+                # FIX 2: Handle NA values in QTY
                 if pd.isna(qty) or qty <= 1:
                     products.append(str(prod))
                 else:
@@ -65,13 +71,17 @@ def process(cascade):
     consolidated['Total'] = consolidated['Total'].apply(clean_currency)
     consolidated['Total'] = pd.to_numeric(consolidated['Total'], errors='coerce')
     
-    #consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
-
-    # Add Price Per Unit column
-    consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
+    # FIX 3: Handle potential division by zero or NA
+    consolidated['QTY'] = consolidated['QTY'].fillna(0)
+    consolidated['Total'] = consolidated['Total'].fillna(0)
+    
+    # Add Price Per Unit column with error handling
+    consolidated['Price Per Unit'] = 0.0  # Default value
+    mask = consolidated['QTY'] > 0  # Only calculate where QTY is positive
+    consolidated.loc[mask, 'Price Per Unit'] = consolidated.loc[mask, 'Total'] / consolidated.loc[mask, 'QTY']
     consolidated['Price Per Unit'] = consolidated['Price Per Unit'].round(2)
 
-        # First, let's create lists of products for each category
+    # First, let's create lists of products for each category
     afo_products = ['ASLT', 'ASRT', 'AMLT', 'AMRT', 'ALLT', 'ALRT', 'AXLLT', 'AXLRT', 'SXSLT', 'SXSRT',
                     'SSLT', 'SSRT', 'SMLT', 'SMRT', 'SLLT', 'SLRT', 'SXLLT', 'SXLRT', 'PASLT', 'PASRT',
                     'PAMLT', 'PAMRT', 'PALLT', 'PALRT', 'PAXLLT', 'PAXLRT', 'MXSLT', 'MXSRT', 'MSLT',
@@ -108,6 +118,10 @@ def process(cascade):
     calf_sleeves_products = ['XFCSS', 'XFCSM', 'XFCSL', 'XFCSXL', 'XFCSXXL', 'XFCSXXXL']
 
     def determine_category(products_str):
+        # FIX 4: Handle NA values in products_str
+        if pd.isna(products_str) or products_str == '':
+            return 'Unknown'
+            
         # Remove quantity indicators and split into individual products
         products = [p.split('x')[0].strip() for p in products_str.split(',')]
 
@@ -135,75 +149,84 @@ def process(cascade):
     consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
-        # Price Per Unit is already a float, no need to convert
-        price = row['Price Per Unit']
-        category = row['Category']
+        # FIX 5: Handle NA values in Price Per Unit
+        try:
+            price = row['Price Per Unit']
+            if pd.isna(price):
+                return '0.00%'
+                
+            category = row['Category']
+            if pd.isna(category):
+                return '0.00%'
 
-        if category == 'AFO':
-            if price < 229:
-                return '10.00%'
-            elif 229 <= price <= 258:
-                return '15.00%'
-            elif 259 <= price <= 298:
-                return '20.00%'
-            elif 299 <= price <= 348:
-                return '22.50%'
-            else:  # >= 349
-                return '25.00%'
+            if category == 'AFO':
+                if price < 229:
+                    return '10.00%'
+                elif 229 <= price <= 258:
+                    return '15.00%'
+                elif 259 <= price <= 298:
+                    return '20.00%'
+                elif 299 <= price <= 348:
+                    return '22.50%'
+                else:  # >= 349
+                    return '25.00%'
 
-        elif category == 'FP':
-            if price < 19:
-                return '10.00%'
-            elif 19 <= price <= 22:
-                return '15.00%'
-            elif 23 <= price <= 25:
-                return '20.00%'
-            elif 26 <= price <= 29:
-                return '22.50%'
-            else:  # >= 30
-                return '25.00%'
+            elif category == 'FP':
+                if price < 19:
+                    return '10.00%'
+                elif 19 <= price <= 22:
+                    return '15.00%'
+                elif 23 <= price <= 25:
+                    return '20.00%'
+                elif 26 <= price <= 29:
+                    return '22.50%'
+                else:  # >= 30
+                    return '25.00%'
 
-        elif category == 'Ankle Braces':
-            if price <= 14:
-                return '10.00%'
-            elif 15 <= price <= 16:
-                return '12.50%'
-            elif 17 <= price <= 18:
-                return '15.00%'
-            else:  # >= 19
-                return '25.00%'
+            elif category == 'Ankle Braces':
+                if price <= 14:
+                    return '10.00%'
+                elif 15 <= price <= 16:
+                    return '12.50%'
+                elif 17 <= price <= 18:
+                    return '15.00%'
+                else:  # >= 19
+                    return '25.00%'
 
-        elif category == 'T-Strap':
-            if price < 15:
-                return '10.00%'
-            elif 15 <= price <= 19:
-                return '15.00%'
-            elif 20 <= price <= 23:
-                return '20.00%'
-            elif 24 <= price <= 28:
-                return '22.50%'
-            else:  # >= 29
-                return '25.00%'
+            elif category == 'T-Strap':
+                if price < 15:
+                    return '10.00%'
+                elif 15 <= price <= 19:
+                    return '15.00%'
+                elif 20 <= price <= 23:
+                    return '20.00%'
+                elif 24 <= price <= 28:
+                    return '22.50%'
+                else:  # >= 29
+                    return '25.00%'
 
-        elif category in ['Socks', 'Calf Sleeves']:
-            if price <= 14:
-                return '10.00%'
-            elif 15 <= price <= 16:
-                return '20.00%'
-            elif 17 <= price <= 18:
-                return '22.50%'
-            else:  # >= 19
-                return '25.00%'
-        
-        elif category == 'IQ':
-            if 65.5 <= price <= 69:
-                return '10.00%'
-            elif 69.25 <= price <= 72:
-                return '15.00%'
-            else:   # >= 73
-                return '18.00%'   
+            elif category in ['Socks', 'Calf Sleeves']:
+                if price <= 14:
+                    return '10.00%'
+                elif 15 <= price <= 16:
+                    return '20.00%'
+                elif 17 <= price <= 18:
+                    return '22.50%'
+                else:  # >= 19
+                    return '25.00%'
+            
+            elif category == 'IQ':
+                if 65.5 <= price <= 69:
+                    return '10.00%'
+                elif 69.25 <= price <= 72:
+                    return '15.00%'
+                else:   # >= 73
+                    return '18.00%'   
 
-        else:  # Accessories or any other category
+            else:  # Accessories or any other category
+                return '0.00%'
+        except Exception:
+            # FIX 6: Return default value if any error occurs
             return '0.00%'
 
     # Add Bonus % column
@@ -213,17 +236,28 @@ def process(cascade):
     consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
-        # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
-        bonus_decimal = float(row['Bonus %'].strip('%')) / 100
+        try:
+            # FIX 7: Handle NA values or invalid strings in Bonus %
+            bonus_str = row['Bonus %']
+            if pd.isna(bonus_str) or not isinstance(bonus_str, str) or '%' not in bonus_str:
+                return '$0.00'
+                
+            # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
+            bonus_decimal = float(bonus_str.strip('%')) / 100
 
-        # Total is already a float, no need to convert
-        total = row['Total']
+            # Total is already a float, no need to convert
+            total = row['Total']
+            if pd.isna(total):
+                return '$0.00'
 
-        # Calculate bonus pay (Total * bonus percentage)
-        bonus_pay = total * bonus_decimal
+            # Calculate bonus pay (Total * bonus percentage)
+            bonus_pay = total * bonus_decimal
 
-        # Format as currency with 2 decimal places
-        return f"${bonus_pay:.2f}"
+            # Format as currency with 2 decimal places
+            return f"${bonus_pay:.2f}"
+        except Exception:
+            # Return default value if any error occurs
+            return '$0.00'
 
     # Add Bonus Pay column
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
