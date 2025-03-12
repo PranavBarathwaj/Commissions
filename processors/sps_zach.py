@@ -4,7 +4,7 @@ import sys
 import streamlit as st
 
 def process(df):
-    """Shopify processing for John with additional customization"""
+    
     # First apply common Shopify processing
     # Define New England states
     states = ['IA', 'NE']

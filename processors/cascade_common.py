@@ -10,7 +10,7 @@ def process(cascade):
     cascade['Quantity'] = pd.to_numeric(cascade['Quantity'], errors='coerce').astype('Int64')
     cascade = cascade[cascade['Direct Shipment'] == 'N']
     # Select only the specified columns
-    columns_to_keep = ['Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
+    columns_to_keep = ['Shipping State', 'Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
     cascade = cascade[columns_to_keep]
 
     cascade = cascade.rename(columns={
@@ -19,7 +19,8 @@ def process(cascade):
         'Invoice No': 'Order#',
         'Product Code': 'Products Ordered',
         'Quantity': 'QTY',
-        'Cogs_Amount': 'Total'
+        'Cogs_Amount': 'Total',
+        'Shipping State': 'State'
         # 'Subtotal' stays the same
     })
 
@@ -45,7 +46,9 @@ def process(cascade):
             'QTY': cascade.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'sum'  # Changed from 'first' to 'sum' to correctly sum totals for multiple products
+        'Total': 'sum',
+        'State': 'first'
+          # Changed from 'first' to 'sum' to correctly sum totals for multiple products
         })
 
     # Clean and convert Total column
@@ -81,7 +84,7 @@ def process(cascade):
                     'PAXLRT-MAG', 'UFOLT-MAG', 'UFORT-MAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG',
                     'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG',
                     'FAXSRT-MAG', 'FAXSLT-MAG', 'FASLT-MAG', 'FASRT-MAG', 'FAMLT-MAG', 'FAMRT-MAG',
-                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG', 'SSXL']
+                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG']
 
     iq_products = ['IQ-1001', 'IQ-1002', 'IQ-1003', 'IQ-1004']
 
@@ -129,7 +132,7 @@ def process(cascade):
     consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
 
     # Reorder columns if needed
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
@@ -207,7 +210,7 @@ def process(cascade):
     consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
 
     # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -226,7 +229,7 @@ def process(cascade):
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
                             'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return consolidated

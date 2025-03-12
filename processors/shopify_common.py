@@ -3,7 +3,7 @@ import pandas as pd
 # processors/shopify_common.py
 def process(shopify):
     # Select only the specified columns
-    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Subtotal']
+    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Subtotal','Shipping Province']
     shopify = shopify[columns_to_keep]
 
     shopify = shopify.rename(columns={
@@ -12,7 +12,8 @@ def process(shopify):
         'Name': 'Order#',
         'Lineitem sku': 'Products Ordered',
         'Lineitem quantity': 'QTY',
-        'Subtotal': 'Total'
+        'Subtotal': 'Total',
+        'Shipping Province': 'State'
     })
 
     # Convert to datetime format
@@ -50,7 +51,8 @@ def process(shopify):
             'QTY': shopify.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'first'
+        'Total': 'first',
+        'State': 'first'
     }).reset_index()
 
     # Add Price Per Unit column
@@ -75,7 +77,7 @@ def process(shopify):
                     'PAXLRT-MAG', 'UFOLT-MAG', 'UFORT-MAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG', 
                     'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG', 
                     'FAXSRT-MAG', 'FAXSLT-MAG', 'FASLT-MAG', 'FASRT-MAG', 'FAMLT-MAG', 'FAMRT-MAG', 
-                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG', 'SSXL']
+                    'FALLT-MAG', 'FALRT-MAG', 'FAXLLT-MAG', 'FAXLRT-MAG']
 
     iq_products = ['IQ-1001', 'IQ-1002', 'IQ-1003', 'IQ-1004']
 
@@ -129,7 +131,7 @@ def process(shopify):
     consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
 
     # Reorder columns if needed
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
@@ -206,7 +208,7 @@ def process(shopify):
     consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
 
     # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -225,7 +227,7 @@ def process(shopify):
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
                             'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return consolidated

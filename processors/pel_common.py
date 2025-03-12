@@ -10,7 +10,7 @@ def process(pel):
     pel.insert(2, 'Order#', 'N/A')
     
     # Select only the specified columns
-    columns_to_keep = ['Account', 'Order Date', 'Order#', 'Item', 'Qty', 'Ext Cost', 'Cost']
+    columns_to_keep = ['State:', 'Account', 'Order Date', 'Order#', 'Item', 'Qty', 'Ext Cost', 'Cost']
     pel = pel[columns_to_keep]
 
     # Clean numeric columns early in the process
@@ -39,7 +39,8 @@ def process(pel):
         'Item': 'Products Ordered',
         'Qty': 'QTY',
         'Ext Cost': 'Total',
-        'Cost': 'Price Per Unit'
+        'Cost': 'Price Per Unit',
+        'State:': 'State'
     })
 
         # Product category lists remain the same
@@ -189,7 +190,7 @@ def process(pel):
     pel['Bonus Pay'] = pel.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns for final output
-    pel = pel[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
+    pel = pel[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
                'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return pel

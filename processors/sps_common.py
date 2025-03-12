@@ -4,7 +4,7 @@ def process(sps):
     sps.insert(0, 'Account', 'N/A')
     sps = sps[sps['DROP_SHIP_FLAG'] == 'N']
     # Select only the specified columns
-    columns_to_keep = ['Account', 'FULFILLMENT_DATE', 'ORDER_NUMBER', 'Part_Number', 'FULFILLED_QTY', 'Ea Cost']
+    columns_to_keep = ['STATE', 'Account', 'FULFILLMENT_DATE', 'ORDER_NUMBER', 'Part_Number', 'FULFILLED_QTY', 'Ea Cost']
     sps = sps[columns_to_keep]
 
     sps = sps.rename(columns={
@@ -12,7 +12,8 @@ def process(sps):
         'ORDER_NUMBER': 'Order#',
         'Part_Number': 'Products Ordered',
         'FULFILLED_QTY': 'QTY',
-        'Ea Cost': 'Total'
+        'Ea Cost': 'Total',
+        'STATE': 'State'
         # 'Subtotal' stays the same
     })
 
@@ -33,7 +34,8 @@ def process(sps):
             'QTY': sps.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'sum'
+        'Total': 'sum',
+        'State': 'first'
     }).reset_index()
 
     # Rename Subtotal to Total if needed
@@ -63,7 +65,7 @@ def process(sps):
                 'PAXLRTMAG', 'UFOLTMAG', 'UFORTMAG', 'MXSLT-MAG', 'MXSRT-MAG', 'MSLT-MAG',
                 'MSRT-MAG', 'MMLT-MAG', 'MMRT-MAG', 'MLLT-MAG', 'MLRT-MAG', 'MXLLT-MAG', 'MXLRT-MAG',
                 'FAXSRTMAG', 'FAXSLTMAG', 'FASLTMAG', 'FASRTMAG', 'FAMLTMAG', 'FAMRTMAG',
-                'FALLTMAG', 'FALRTMAG', 'FAXLLTMAG', 'FAXLRTMAG', 'SSXL']
+                'FALLTMAG', 'FALRTMAG', 'FAXLLTMAG', 'FAXLRTMAG']
 
     iq_products = ['IQ-1001', 'IQ-1002', 'IQ-1003', 'IQ-1004']
 
@@ -113,7 +115,7 @@ def process(sps):
     consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
 
     # Reorder columns if needed
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
@@ -191,7 +193,7 @@ def process(sps):
     consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
 
     # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -210,7 +212,7 @@ def process(sps):
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
                             'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return consolidated

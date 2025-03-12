@@ -5,7 +5,7 @@ import streamlit as st
 
 def process(df):
     """Shopify processing for John with additional customization"""
-    # Define West Coast states
+    
     states = ['IA', 'OR']
     
     # Filter the dataset to include only West Coast states
