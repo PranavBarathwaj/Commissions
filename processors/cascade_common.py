@@ -4,7 +4,7 @@ import pandas as pd
 def process(cascade):
     cascade.columns = cascade.columns.str.strip()
     numeric_columns = ['Quantity', 'Total Price', 'Cogs_Amount']
-    cascade[numeric_columns] = cascade[numeric_columns].replace({r'[\(\)]': ''}, regex=True).astype(float)
+    cascade[numeric_columns] = cascade[numeric_columns].replace({r'[\$\(\),]': ''}, regex=True)
 
     # Convert Quantity specifically to Int64
     cascade['Quantity'] = pd.to_numeric(cascade['Quantity'], errors='coerce').astype('Int64')
