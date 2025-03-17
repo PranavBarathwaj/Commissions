@@ -7,7 +7,7 @@ def process(df):
     """Shopify processing for John with additional customization"""
     # First apply common Shopify processing
     # Define New England states
-    states = ['ND', 'SD', 'MN', 'IA', 'NE']
+    states = ['ND', 'SD', 'MN', 'IA', 'OR']
 
     # Filter the dataset to include only New England states
     df = df[df['STATE'].isin(states)]

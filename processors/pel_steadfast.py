@@ -6,7 +6,7 @@ import streamlit as st
 def process(df):
     """Shopify processing for John with additional customization"""
     # Define West Coast states
-    states = ['ND', 'SD', 'MN', 'IA', 'NE']
+    states = ['ND', 'SD', 'MN', 'IA', 'OR']
     
     # Filter the dataset to include only West Coast states
     df = df[df['State:'].isin(states)]
