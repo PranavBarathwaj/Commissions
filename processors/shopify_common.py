@@ -134,7 +134,7 @@ def process(shopify):
     consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
 
     # Reorder columns if needed
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    consolidated = consolidated[['State','City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
