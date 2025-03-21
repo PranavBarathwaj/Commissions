@@ -3,7 +3,7 @@ import pandas as pd
 # processors/shopify_common.py
 def process(shopify):
     # Select only the specified columns
-    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Subtotal','Shipping Province']
+    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Subtotal','Shipping Province', 'Shipping City']
     shopify = shopify[columns_to_keep]
 
     shopify = shopify.rename(columns={
