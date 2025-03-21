@@ -13,7 +13,8 @@ def process(shopify):
         'Lineitem sku': 'Products Ordered',
         'Lineitem quantity': 'QTY',
         'Subtotal': 'Total',
-        'Shipping Province': 'State'
+        'Shipping Province': 'State',
+        'Shipping City': 'City'
     })
 
     # Convert to datetime format
@@ -52,7 +53,8 @@ def process(shopify):
         })),
         'QTY': 'sum',
         'Total': 'first',
-        'State': 'first'
+        'State': 'first',
+        'City': 'first'
     }).reset_index()
 
     # Add Price Per Unit column
@@ -209,7 +211,7 @@ def process(shopify):
     consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
 
     # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    consolidated = consolidated[['State','City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -228,7 +230,7 @@ def process(shopify):
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+    consolidated = consolidated[['State','City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
                             'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return consolidated
