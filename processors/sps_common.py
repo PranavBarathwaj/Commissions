@@ -41,7 +41,7 @@ def process(sps):
     # Rename Subtotal to Total if needed
     consolidated = consolidated.rename(columns={'Subtotal': 'Total'})
 
-    consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
+    #consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
 
     # Add Price Per Unit column
     consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
