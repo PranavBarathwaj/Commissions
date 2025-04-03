@@ -6,7 +6,7 @@ import streamlit as st
 def process(df):
     """Shopify processing for John with additional customization"""
     # Define West Coast states
-    states = ['IN', 'OH', 'MI']
+    states = ['IN', 'OH', 'MI', 'KY']
     zip = [
         # Allegan County, Michigan
     '49010', '49013', '49055', '49056', '49070', '49079', '49080', '49090', '49323', '49327', '49335', '49344',

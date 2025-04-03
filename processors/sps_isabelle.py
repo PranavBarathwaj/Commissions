@@ -8,7 +8,7 @@ def process(df):
     # First apply common Shopify processing
 
     # Define states and ZIP codes for filtering
-    states = ['IN', 'OH', 'MI']
+    states = ['IN', 'OH', 'MI', 'KY']
 
     # ZIP codes for all specified counties
     zip = [
