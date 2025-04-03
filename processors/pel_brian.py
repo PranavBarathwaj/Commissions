@@ -28,18 +28,30 @@ def process(df):
     ]
     
     # Create masks for different filtering conditions
-    mask_la_ms = df['State:'].isin(['LA', 'MS'])  # No zip filtering for LA, MS, and PA
-    mask_al_fl = (df['State:'].isin(['AL', 'FL'])) & (df['Zip'].isin(zip))  # Zip filtering for AL and FL
+    # For LA and MS states - include all without zip filtering
+    mask_la_ms = df['State:'].isin(['LA', 'MS'])
     
-    # Combine masks with OR operator
-    combined_mask = mask_la_ms | mask_al_fl
+    # For AL and FL states - apply zip code filtering
+    # Using containment check rather than exact matching
+    mask_al_fl = df['State:'].isin(['AL', 'FL']) & df['Zip'].apply(
+        lambda x: any(zip_code in str(x) for zip_code in zip_codes)
+    )
     
-    # Apply the filter
+    # For IN, OH, MI, KY states - apply zip code filtering
+    mask_midwest = df['State:'].isin(states) & df['Zip'].apply(
+        lambda x: any(zip_code in str(x) for zip_code in zip_codes)
+    )
+    
+    # Combine all masks with OR operator
+    combined_mask = mask_la_ms | mask_al_fl | mask_midwest
+    
+    # Apply the combined filter
     df = df[combined_mask]
-
+    
     # Check if the filtered DataFrame is empty
     if df.empty:
-        st.warning(f"No entries found for states: {', '.join(states)}.")
+        included_states = set(['LA', 'MS', 'AL', 'FL'] + states)
+        st.warning(f"No entries found for states: {', '.join(included_states)}.")
         sys.exit()  # This will terminate the program
     
     # If we have data, continue with processing

@@ -3,6 +3,7 @@ import pandas as pd
 def process(sps):
     sps.insert(0, 'Account', 'N/A')
     sps = sps[sps['DROP_SHIP_FLAG'] == 'N']
+    sps = sps[sps['Document_Type'] == 'Invoice Line']
     # Select only the specified columns
     columns_to_keep = ['STATE', 'Account', 'FULFILLMENT_DATE', 'ORDER_NUMBER', 'Part_Number', 'FULFILLED_QTY', 'Ea Cost']
     sps = sps[columns_to_keep]
@@ -12,47 +13,20 @@ def process(sps):
         'ORDER_NUMBER': 'Order#',
         'Part_Number': 'Products Ordered',
         'FULFILLED_QTY': 'QTY',
-        'Ea Cost': 'Total',
+        'Ea Cost': 'Price Per Unit',
         'STATE': 'State'
-        # 'Subtotal' stays the same
     })
 
     sps['Order Date'] = pd.to_datetime(sps['Order Date'], errors='coerce')
     sps['Order Date'] = sps['Order Date'].dt.strftime('%#m/%#d/%y')
-
-        # Create a function to combine product names with their quantities
-    def combine_products_with_qty(group):
-        return ', '.join(f"{prod}x{int(qty)}" if qty > 1 else prod
-                        for prod, qty in zip(group['Products Ordered'], group['QTY']))
-
-    # Group by order number and aggregate the data
-    consolidated = sps.groupby('Order#').agg({
-        'Account': 'first',
-        'Order Date': 'first',
-        'Products Ordered': lambda x: combine_products_with_qty(pd.DataFrame({
-            'Products Ordered': x.values,
-            'QTY': sps.loc[x.index, 'QTY'].values
-        })),
-        'QTY': 'sum',
-        'Total': 'sum',
-        'State': 'first'
-    }).reset_index()
-
-    # Rename Subtotal to Total if needed
-    consolidated = consolidated.rename(columns={'Subtotal': 'Total'})
-
-    #consolidated['Total'] = consolidated['Total'] * consolidated['QTY']
-
-    # Add Price Per Unit column
-    consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
-
-    # Round Price Per Unit to 2 decimal places
-    consolidated['Price Per Unit'] = consolidated['Price Per Unit'].round(2)
-
+    
+    # Calculate Total for each line item
+    sps['Total'] = sps['Price Per Unit'] * sps['QTY']
+    
     # Sort by Order Date in descending order
-    consolidated = consolidated.sort_values('Order Date', ascending=False)
+    sps = sps.sort_values('Order Date', ascending=False)
 
-        # First, let's create lists of products for each category
+    # First, let's create lists of products for each category
     afo_products = ['AXSRT', 'AXSLT', 'ASLT', 'ASRT', 'AMLT', 'AMRT', 'ALLT', 'ALRT', 'AXLLT', 'AXLRT', 'SXSLT', 'SXSRT',
                 'SSLT', 'SSRT', 'SMLT', 'SMRT', 'SLLT', 'SLRT', 'SXLLT', 'SXLRT', 'PASLT', 'PASRT',
                 'PAMLT', 'PAMRT', 'PALLT', 'PALRT', 'PAXLLT', 'PAXLRT', 'MXSLT', 'MXSRT', 'MSLT',
@@ -90,32 +64,26 @@ def process(sps):
 
     calf_sleeves_products = ['XFCSS', 'XFCSM', 'XFCSL', 'XFCSXL', 'XFCSXXL', 'XFCSXXXL']
 
-    def determine_category(products_str):
-        # Remove quantity indicators and split into individual products
-        products = [p.split('x')[0].strip() for p in products_str.split(',')]
-        
-        if any(prod in afo_products for prod in products):
+    def determine_category(product):
+        if product in afo_products:
             return 'AFO'
-        elif any(prod in iq_products for prod in products):
+        elif product in iq_products:
             return 'IQ'
-        elif any(prod in fp_products for prod in products):
+        elif product in fp_products:
             return 'FP'
-        elif any(prod in ankle_braces_products for prod in products):
+        elif product in ankle_braces_products:
             return 'Ankle Braces'
-        elif any(prod in tstrap_products for prod in products):
+        elif product in tstrap_products:
             return 'T-Strap'
-        elif any(prod in socks_products for prod in products):
+        elif product in socks_products:
             return 'Socks'
-        elif any(prod in calf_sleeves_products for prod in products):
+        elif product in calf_sleeves_products:
             return 'Calf Sleeves'
         else:
             return 'Accessories'
         
-    # Add Category column
-    consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
-
-    # Reorder columns if needed
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    # Add Category column - now just looking at the single product
+    sps['Category'] = sps['Products Ordered'].apply(determine_category)
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
@@ -190,10 +158,7 @@ def process(sps):
             return '0.00%'
 
     # Add Bonus % column
-    consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
-
-    # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    sps['Bonus %'] = sps.apply(determine_bonus_percentage, axis=1)
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -209,10 +174,10 @@ def process(sps):
         return f"${bonus_pay:.2f}"
 
     # Add Bonus Pay column
-    consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
+    sps['Bonus Pay'] = sps.apply(calculate_bonus_pay, axis=1)
 
-    # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
-                            'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
-
-    return consolidated
+    # Reorder columns for the final output
+    result = sps[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+                  'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
+    
+    return result
