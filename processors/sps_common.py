@@ -178,7 +178,7 @@ def process(sps):
     sps['Bonus Pay'] = sps.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns for the final output
-    result = sps[['State', 'City' 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+    result = sps[['State', 'City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
                   'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
     
     return result

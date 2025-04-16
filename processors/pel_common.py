@@ -11,7 +11,7 @@ def process(pel):
     pel.insert(3, 'City', 'N/A')
     
     # Select only the specified columns
-    columns_to_keep = ['State:', 'City', 'Account', 'Order Date', 'Order#', 'Item', 'Qty', 'Ext Cost', 'Cost']
+    columns_to_keep = ['State', 'City', 'Account', 'Order Date', 'Order#', 'Item', 'Qty', 'Ext Cost', 'Cost']
     pel = pel[columns_to_keep]
 
     # Clean numeric columns early in the process
@@ -41,7 +41,7 @@ def process(pel):
         'Qty': 'QTY',
         'Ext Cost': 'Total',
         'Cost': 'Price Per Unit',
-        'State:': 'State'
+        'State': 'State'
     })
 
         # Product category lists remain the same

@@ -108,7 +108,7 @@ def process(df):
     ]
 
     # Filter the dataset to include only West Coast states
-    df = df[df['State:'].isin(states)]
+    df = df[df['State'].isin(states)]
     # Create a mask to filter the dataframe
     mask = df['Zip'].apply(lambda x: any(zip_code in str(x) for zip_code in zip))
     

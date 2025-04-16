@@ -9,7 +9,7 @@ def process(df):
     states = ['CT', 'ME', 'MA', 'NH', 'RI', 'VT']
     
     # Filter the dataset to include only West Coast states
-    df = df[df['State:'].isin(states)]
+    df = df[df['State'].isin(states)]
     
     # Check if the filtered DataFrame is empty
     if df.empty:
