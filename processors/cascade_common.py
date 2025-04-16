@@ -20,13 +20,13 @@ def process(cascade):
     cascade = cascade[cascade['Direct Shipment'] == 'N']
     
     # Select only the specified columns
-    columns_to_keep = ['Shipping State', 'Shipping City', 'Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
+    columns_to_keep = ['Shipping State', 'Shipping City', 'Account Name', 'Invoice Date', 'Sales Name', 'Product Code', 'Quantity', 'Cogs_Amount']
     cascade = cascade[columns_to_keep]
 
     cascade = cascade.rename(columns={
         'Account Name': 'Account',
         'Invoice Date': 'Order Date',
-        'Invoice No': 'Order#',
+        'Sales Name': 'Order#',
         'Product Code': 'Products Ordered',
         'Quantity': 'QTY',
         'Cogs_Amount': 'Total',

@@ -3,7 +3,7 @@ import pandas as pd
 # processors/shopify_common.py
 def process(shopify):
     # Select only the specified columns
-    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Subtotal','Shipping Province', 'Shipping City']
+    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Lineitem price', 'Subtotal','Shipping Province', 'Shipping City']
     shopify = shopify[columns_to_keep]
 
     shopify = shopify.rename(columns={
@@ -12,18 +12,30 @@ def process(shopify):
         'Name': 'Order#',
         'Lineitem sku': 'Products Ordered',
         'Lineitem quantity': 'QTY',
+        'Lineitem price': 'Unit Price',
         'Subtotal': 'Total',
         'Shipping Province': 'State',
         'Shipping City': 'City'
     })
 
-    # Convert to datetime format
-    shopify['Order Date'] = pd.to_datetime(shopify['Order Date'], errors='coerce')
-    shopify['Order Date'] = shopify['Order Date'].dt.strftime('%#m/%#d/%y')
+    # First check if the column has the correct data type
+    # Convert to datetime format with better error handling
+    try:
+        shopify['Order Date'] = pd.to_datetime(shopify['Order Date'], errors='coerce')
+        # Only apply dt.strftime to non-null values
+        mask = shopify['Order Date'].notna()
+        if mask.any():  # If there are any valid datetime values
+            shopify.loc[mask, 'Order Date'] = shopify.loc[mask, 'Order Date'].dt.strftime('%m/%d/%y')
+        else:
+            # If all values are NaT, convert column to string to avoid dt accessor errors
+            shopify['Order Date'] = shopify['Order Date'].astype(str)
+    except Exception as e:
+        # If conversion fails entirely, set to string
+        shopify['Order Date'] = shopify['Order Date'].astype(str)
     
     # Handle nulls in Products Ordered - convert to empty string instead of null
     shopify['Products Ordered'] = shopify['Products Ordered'].fillna('')
-
+    
     def combine_products_with_qty(group):
         products_list = []
         for prod, qty in zip(group['Products Ordered'], group['QTY']):
@@ -43,6 +55,14 @@ def process(shopify):
         # Join all products with a comma
         return ", ".join(products_list) if products_list else ""
 
+    # Make sure Total and QTY are numeric before grouping
+    shopify['Total'] = pd.to_numeric(shopify['Total'], errors='coerce').fillna(0)
+    shopify['QTY'] = pd.to_numeric(shopify['QTY'], errors='coerce').fillna(0)
+    shopify['Unit Price'] = pd.to_numeric(shopify['Unit Price'], errors='coerce').fillna(0)
+    
+    # Create a new QTY column that is 0 for items with zero price
+    shopify.loc[shopify['Unit Price'] <= 0, 'QTY'] = 0
+
     # Group by order number and aggregate the data
     consolidated = shopify.groupby('Order#').agg({
         'Account': 'first',
@@ -52,19 +72,30 @@ def process(shopify):
             'QTY': shopify.loc[x.index, 'QTY'].values
         })),
         'QTY': 'sum',
-        'Total': 'first',
+        'Total': 'sum',  # Changed from 'first' to 'sum' to add up all subtotals
         'State': 'first',
         'City': 'first'
     }).reset_index()
 
-    # Add Price Per Unit column
-    consolidated['Price Per Unit'] = consolidated['Total'] / consolidated['QTY']
+    # Make sure Total and QTY are numeric for division
+    consolidated['Total'] = pd.to_numeric(consolidated['Total'], errors='coerce')
+    consolidated['QTY'] = pd.to_numeric(consolidated['QTY'], errors='coerce')
+    
+    # Add Price Per Unit column with error handling
+    consolidated['Price Per Unit'] = 0.0  # Default value
+    # Only calculate where QTY is valid and greater than 0
+    mask = (consolidated['QTY'] > 0) & consolidated['QTY'].notna() & consolidated['Total'].notna()
+    consolidated.loc[mask, 'Price Per Unit'] = consolidated.loc[mask, 'Total'] / consolidated.loc[mask, 'QTY']
 
     # Round Price Per Unit to 2 decimal places
     consolidated['Price Per Unit'] = consolidated['Price Per Unit'].round(2)
 
-    # Sort by Order Date in descending order
-    consolidated = consolidated.sort_values('Order Date', ascending=False)
+    # Sort by Order Date (safely)
+    try:
+        consolidated = consolidated.sort_values('Order Date', ascending=False)
+    except:
+        # If sort fails, continue without sorting
+        pass
     
     # First, let's create lists of products for each category
     afo_products = ['AXSRT', 'AXSLT', 'ASLT', 'ASRT', 'AMLT', 'AMRT', 'ALLT', 'ALRT', 'AXLLT', 'AXLRT', 'SXSLT', 'SXSRT', 
@@ -94,7 +125,7 @@ def process(shopify):
                'FCCIL', 'CCIL', 'FCCIXL', 'CCIXL', 'FKPF5', 'KFP5', 'FKFP6', 'KFP6', 'FKFP7', 'KFP7',
                'FKFP8', 'KFP8', 'FKFP9', 'KFP9', 'FKFP10', 'KFP10', 'FKFP11', 'KFP11', 'FKFP12',
                'KFP12', 'FKFPBK1', 'KFPBK1', 'FMEW5', 'RMEW5', 'FMEW6', 'RMEW6', 'FMEM6', 'RMEM6',
-               'FMEM7', 'RMEM7', 'FMEM8', 'RMEM8', 'FMEM9', 'RMEM9', 'FMEM10', 'RMEM11','FMEM11' 'FMEM12',
+               'FMEM7', 'RMEM7', 'FMEM8', 'RMEM8', 'FMEM9', 'RMEM9', 'FMEM10', 'RMEM11','FMEM11', 'FMEM12',
                'RMEM12', 'FMEM13', 'RMEM13', 'FMEM14', 'RMEM14', 'FMEM15', 'RMEM15']
 
     ankle_braces_products = ['MACH-XS', 'MACH-S', 'MACH-M', 'MACH-L', 'MACH-XL',
@@ -216,17 +247,22 @@ def process(shopify):
     consolidated = consolidated[['State','City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
-        # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
-        bonus_decimal = float(row['Bonus %'].strip('%')) / 100
-        
-        # Total is already a float, no need to convert
-        total = row['Total']
-        
-        # Calculate bonus pay (Total * bonus percentage)
-        bonus_pay = total * bonus_decimal
-        
-        # Format as currency with 2 decimal places
-        return f"${bonus_pay:.2f}"
+        try:
+            # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
+            bonus_decimal = float(row['Bonus %'].strip('%')) / 100
+            
+            # Ensure Total is numeric
+            total = pd.to_numeric(row['Total'], errors='coerce')
+            if pd.isna(total):
+                return '$0.00'
+            
+            # Calculate bonus pay (Total * bonus percentage)
+            bonus_pay = total * bonus_decimal
+            
+            # Format as currency with 2 decimal places
+            return f"${bonus_pay:.2f}"
+        except:
+            return '$0.00'
 
     # Add Bonus Pay column
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
