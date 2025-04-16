@@ -5,7 +5,7 @@ def process(sps):
     sps = sps[sps['DROP_SHIP_FLAG'] == 'N']
     sps = sps[sps['Document_Type'] == 'Invoice Line']
     # Select only the specified columns
-    columns_to_keep = ['STATE', 'Account', 'FULFILLMENT_DATE', 'ORDER_NUMBER', 'Part_Number', 'FULFILLED_QTY', 'Ea Cost']
+    columns_to_keep = ['STATE', 'CITY', 'Account', 'FULFILLMENT_DATE', 'ORDER_NUMBER', 'Part_Number', 'FULFILLED_QTY', 'Ea Cost']
     sps = sps[columns_to_keep]
 
     sps = sps.rename(columns={
@@ -14,7 +14,8 @@ def process(sps):
         'Part_Number': 'Products Ordered',
         'FULFILLED_QTY': 'QTY',
         'Ea Cost': 'Price Per Unit',
-        'STATE': 'State'
+        'STATE': 'State',
+        'CITY': 'City'
     })
 
     sps['Order Date'] = pd.to_datetime(sps['Order Date'], errors='coerce')
@@ -177,7 +178,7 @@ def process(sps):
     sps['Bonus Pay'] = sps.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns for the final output
-    result = sps[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
+    result = sps[['State', 'City' 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 
                   'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
     
     return result

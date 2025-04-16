@@ -20,7 +20,7 @@ def process(cascade):
     cascade = cascade[cascade['Direct Shipment'] == 'N']
     
     # Select only the specified columns
-    columns_to_keep = ['Shipping State', 'Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
+    columns_to_keep = ['Shipping State', 'Shipping City', 'Account Name', 'Invoice Date', 'Invoice No', 'Product Code', 'Quantity', 'Cogs_Amount']
     cascade = cascade[columns_to_keep]
 
     cascade = cascade.rename(columns={
@@ -30,7 +30,8 @@ def process(cascade):
         'Product Code': 'Products Ordered',
         'Quantity': 'QTY',
         'Cogs_Amount': 'Total',
-        'Shipping State': 'State'
+        'Shipping State': 'State',
+        'Shipping City': 'City'
     })
 
     cascade['Order Date'] = pd.to_datetime(cascade['Order Date'], errors='coerce')
@@ -62,7 +63,8 @@ def process(cascade):
         'Order Date': 'first',
         'QTY': lambda x: x.sum(skipna=True),
         'Total': lambda x: x.sum(skipna=True),  # Critical fix: use sum with skipna=True
-        'State': 'first'
+        'State': 'first',
+        'City': 'first'
     })
     
     # Special handling for Products Ordered
@@ -141,7 +143,7 @@ def process(cascade):
     consolidated['Category'] = consolidated['Products Ordered'].apply(determine_category)
 
     # Reorder columns if needed
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
+    consolidated = consolidated[['State', 'City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit']]
 
     def determine_bonus_percentage(row):
         # Price Per Unit is already a float, no need to convert
@@ -219,7 +221,7 @@ def process(cascade):
     consolidated['Bonus %'] = consolidated.apply(determine_bonus_percentage, axis=1)
 
     # Reorder columns to include new Bonus % column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
+    consolidated = consolidated[['State', 'City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category', 'QTY', 'Total', 'Price Per Unit', 'Bonus %']]
 
     def calculate_bonus_pay(row):
         # Convert bonus percentage (e.g., '25.00%') to decimal (0.25)
@@ -242,7 +244,7 @@ def process(cascade):
     consolidated['Bonus Pay'] = consolidated.apply(calculate_bonus_pay, axis=1)
 
     # Reorder columns to include new Bonus Pay column
-    consolidated = consolidated[['State', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
+    consolidated = consolidated[['State', 'City', 'Account', 'Order Date', 'Order#', 'Products Ordered', 'Category',
                             'QTY', 'Total', 'Price Per Unit', 'Bonus %', 'Bonus Pay']]
 
     return consolidated
