@@ -34,12 +34,12 @@ def process(df):
     # For AL and FL states - apply zip code filtering
     # Using containment check rather than exact matching
     mask_al_fl = df['State'].isin(['AL', 'FL']) & df['Zip'].apply(
-        lambda x: any(zip_code in str(x) for zip_code in zip_codes)
+        lambda x: any(zip_code in str(x) for zip_code in zip)
     )
     
     # For IN, OH, MI, KY states - apply zip code filtering
     mask_midwest = df['State'].isin(states) & df['Zip'].apply(
-        lambda x: any(zip_code in str(x) for zip_code in zip_codes)
+        lambda x: any(zip_code in str(x) for zip_code in zip)
     )
     
     # Combine all masks with OR operator
