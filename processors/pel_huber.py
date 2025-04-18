@@ -132,9 +132,14 @@ def process(df):
     '44125', '44126', '44127'
     ]
 
-    # Filter the dataset to include only West Coast states
+    # Filter the dataset to include only Ohio and specified ZIP codes
     df = df[df['State'].isin(states)]
-    df = df[df['Zip'].isin(zip)]
+    # Create a mask to filter the dataframe
+    mask = df['Zip'].apply(lambda x: any(zip_code in str(x) for zip_code in zip))
+    
+    # Apply the mask to filter the dataframe
+    df = df[mask]
+    
     # Check if the filtered DataFrame is empty
     if df.empty:
         st.warning(f"No entries found for states: {', '.join(states)}.")

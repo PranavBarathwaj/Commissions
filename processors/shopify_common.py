@@ -76,7 +76,7 @@ def process(shopify):
         'Total': 'sum',  # Changed from 'first' to 'sum' to add up all subtotals
         'State': 'first',
         'City': 'first',
-        'Zip': 'first'
+        'Zip': 'first',
     }).reset_index()
 
     # Make sure Total and QTY are numeric for division

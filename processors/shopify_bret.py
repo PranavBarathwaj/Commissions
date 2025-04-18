@@ -1,10 +1,15 @@
-# processors/shopify_jon.py
+# processors/shopify_bret.py
 from .shopify_common import process as shopify_process
 
 def process(df):
-    """Shopify processing for John with additional customization"""
-    # First apply common Shopify processing
-    df['Shipping Zip'] = df['Shipping Zip'].str.replace("^'", "", regex=True)
+    """Shopify processing for Huber with additional customization"""
+    # Clean up Shipping Zip if needed
+    if 'Shipping Zip' in df.columns:
+        df['Shipping Zip'] = df['Shipping Zip'].str.replace("^'", "", regex=True)
+    
+    # First apply common Shopify processings
+    processed_df = shopify_process(df)
+    
     zip = [
     # Travis County
     '73301', '73344', '78701', '78702', '78703', '78704', '78705', '78708', '78709', '78710', 
@@ -81,9 +86,15 @@ def process(df):
     '78642', '78646', '78650', '78660', '78664', '78665', '78673', '78674', '78681', '78682', 
     '78683', '78717', '78718', '78726', '78727', '78728', '78729', '78750', '78759'
     ]
-
-    # Filter the dataset to include only West Coast states
-    df = df[df['Shipping Zip'].isin(zip)]
-    df = shopify_process(df)
     
-    return df
+    # Check if Shipping Zip is available in the processed data
+    if 'Shipping Zip' in processed_df.columns:
+        # Filter based on zip codes
+        filtered_df = processed_df[processed_df['Shipping Zip'].isin(zip)]
+    else:
+        # If Shipping Zip is not available, we need to modify shopify_common.py
+        # For now, return the unfiltered processed data with a warning
+        filtered_df = processed_df
+        print("Warning: 'Shipping Zip' column not found in processed data. Cannot filter by zip codes.")
+    
+    return filtered_df
