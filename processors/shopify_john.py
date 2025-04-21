@@ -1,4 +1,4 @@
-# processors/shopify_jon.py
+# processors/shopify_john.py
 from .shopify_common import process as shopify_process
 
 def process(df):

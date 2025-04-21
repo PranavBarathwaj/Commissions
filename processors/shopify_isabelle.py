@@ -864,9 +864,9 @@ def process(df):
     ]
     
     # Check if Shipping Zip is available in the processed data
-    if 'Shipping Zip' in processed_df.columns:
+    if 'Zip' in processed_df.columns:
         # Filter based on zip codes
-        filtered_df = processed_df[processed_df['Shipping Zip'].isin(zip)]
+        filtered_df = processed_df[processed_df['Zip'].isin(zip)]
     else:
         # If Shipping Zip is not available, we need to modify shopify_common.py
         # For now, return the unfiltered processed data with a warning
