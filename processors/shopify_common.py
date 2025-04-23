@@ -3,11 +3,11 @@ import pandas as pd
 # processors/shopify_common.py
 def process(shopify):
     # Select only the specified columns
-    columns_to_keep = ['Shipping Name', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Lineitem price', 'Subtotal','Shipping Province', 'Shipping City', 'Shipping Zip']
+    columns_to_keep = ['Shipping Name', 'Shipping Company', 'Created at', 'Name', 'Lineitem sku', 'Lineitem quantity', 'Lineitem price', 'Subtotal','Shipping Province', 'Shipping City', 'Shipping Zip']
     shopify = shopify[columns_to_keep]
 
+    # Rename columns
     shopify = shopify.rename(columns={
-        'Shipping Name': 'Account',
         'Created at': 'Order Date',
         'Name': 'Order#',
         'Lineitem sku': 'Products Ordered',
@@ -18,6 +18,13 @@ def process(shopify):
         'Shipping City': 'City',
         'Shipping Zip': 'Zip'
     })
+    
+    # Create Account column with Shipping Company, defaulting to Shipping Name when empty
+    shopify['Account'] = shopify['Shipping Company'].fillna(shopify['Shipping Name'])
+    
+    # Drop the original columns since we've processed them
+    shopify = shopify.drop(['Shipping Company', 'Shipping Name'], axis=1)
+
 
     # First check if the column has the correct data type
     # Convert to datetime format with better error handling
